@@ -35,11 +35,6 @@ class Helper():
         elif platform == "win32":
             logging.debug("Found Windows")
             raise Exception("Windows Not Supported")
-        
-        #check if running on the Pynq
-        if os.path.exists('/dev/uio0'):
-            logging.debug("found /dev/uio0, means Pynq")
-            raise Exception("Running on Pynq not supported.  Run on the host machine.")
 
     def getVersion(self):
         return self.version
@@ -50,7 +45,7 @@ class Helper():
                 return json.load(f)
         else:
             return {"IP": "192.168.2.99", 
-                    "Proj": "Parallel_Popcount", 
+                    "Proj": "P4_Popcount", 
                     "fpga_design": "bd_fpga",
                     "branch": "master"}
 
@@ -60,9 +55,11 @@ class Helper():
             json.dump( self.J, f) 
 
      
+
     def run_command(self, command):
         print ('running: ', command)
-        result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        result = subprocess.Popen(command, shell=True, executable='/bin/bash', \
+                            stdout=subprocess.PIPE, stdin=subprocess.PIPE)
         return result.communicate()
 
     def vivado_build_cleanup(self,):
@@ -152,7 +149,8 @@ class Helper():
                     'git remote remove pynq', 
                     'git remote add pynq xilinx@' + self.J['IP'] + ':~/jupyter_notebooks/' + proj,
                     'GIT_SSH_COMMAND=\'ssh -i '+self.priv_key + '\' git push pynq ' + self.J['branch'], 
-                    ssh + ' "cd ~/jupyter_notebooks/' + proj + ' && git checkout ' + self.J['branch'] + '"'
+                    ssh + ' "cd ~/jupyter_notebooks/' + proj + ' && git checkout ' + self.J['branch'] + '"',
+                    ssh + ' "cd ~/jupyter_notebooks/' + proj + ' && git config receive.denyCurrentBranch" '
                    ]   
         for command in commands:                     
             self.run_command(command)
@@ -184,8 +182,9 @@ class Helper():
 
         commands = [
                     'git pull origin ' + self.J['branch'], 
-                    ssh + ' "cd ~/jupyter_notebooks/' + proj + ' && git commit -a -m \\"e315helper.py update\\" ' + '"',
                     'GIT_SSH_COMMAND=\'ssh -i '+self.priv_key + '\' git pull pynq ' + self.J['branch'], 
+
+                    ssh + ' "cd ~/jupyter_notebooks/' + proj + ' && git commit -a -m \\"update commit\\" ' + '"',
 
                     ssh + ' "mkdir -p ~/tmp" ',
                     ssh + ' "cd ~/tmp && git init --bare" ',
@@ -199,7 +198,7 @@ class Helper():
         for command in commands:                     
             self.run_command(command)
 
-
+        
     def set_ip(self, IP):
         # https://www.geeksforgeeks.org/python-program-to-validate-an-ip-address/
         regex = '''^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.( 
@@ -278,7 +277,7 @@ class Parser():
             print ('No command specified!')
             ap.print_help()
             exit(1)
-
+       
         #jump to the correct command function
         getattr(self, args.command)(args)
 
@@ -341,5 +340,4 @@ class Parser():
 if __name__ == "__main__":
 
     Parser()
-
 
