@@ -45,7 +45,7 @@ class Helper():
                 return json.load(f)
         else:
             return {"IP": "192.168.2.99", 
-                    "Proj": "P4_Popcount", 
+                    "Proj": "P8_Pipeline_Dot", 
                     "fpga_design": "bd_fpga",
                     "branch": "master"}
 
